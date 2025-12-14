@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getCustomerPolicies } from '../../services/policyService';
-import { createClaim } from '../../services/claimService';
+import { getCustomerPoliciesData } from '../../utils/customerDummyData';
 import ClaimForm from '../../components/claim/ClaimForm';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Alert from '../../components/common/Alert';
 import { toast } from 'react-toastify';
 
@@ -12,30 +10,16 @@ const RaiseClaim = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [policies, setPolicies] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchPolicies = async () => {
-      try {
-        setLoading(true);
-        const customerId = user?.customerId || user?.username;
-        if (customerId) {
-          const data = await getCustomerPolicies(customerId);
-          // Only show active policies
-          const activePolicies = data.filter(p => p.status === 'Active');
-          setPolicies(activePolicies);
-        }
-      } catch (err) {
-        setError('Failed to load policies. Please try again.');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPolicies();
+    // Get dummy data directly - no API calls, no storage
+    const customerId = user?.customerId || 'cust_1';
+    const data = getCustomerPoliciesData(customerId);
+    // Only show active policies
+    const activePolicies = (data || []).filter(p => p.status === 'Active');
+    setPolicies(activePolicies);
   }, [user]);
 
   const handleSubmit = async (formData) => {
@@ -43,31 +27,19 @@ const RaiseClaim = () => {
       setSubmitting(true);
       setError('');
       
-      const customerId = user?.customerId || user?.username;
-      const claimData = {
-        ...formData,
-        customerId
-      };
-
-      await createClaim(claimData);
+      // Simulate claim submission - no actual API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       toast.success('Claim submitted successfully!');
       navigate('/customer/claims');
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Failed to submit claim. Please try again.';
+      const errorMsg = 'Failed to submit claim. Please try again.';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <LoadingSpinner />
-      </div>
-    );
-  }
 
   if (policies.length === 0) {
     return (

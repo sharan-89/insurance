@@ -49,7 +49,7 @@ export const isCustomer = (user) => {
   return user?.role === 'Customer';
 };
 
-export const isAdminOrAgent = (user) => {
-  return user?.role === 'Admin' || user?.role === 'Agent';
+export const isAdmin = (user) => {
+  return user?.role === 'Admin';
 };
 

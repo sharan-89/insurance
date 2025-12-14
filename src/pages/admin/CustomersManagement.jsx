@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { getAllCustomers, createCustomer, updateCustomer, deleteCustomer } from '../../services/customerService';
 import CustomerList from '../../components/customer/CustomerList';
 import CustomerForm from '../../components/customer/CustomerForm';
+import CustomerDetailsModal from '../../components/customer/CustomerDetailsModal';
 import Modal from '../../components/common/Modal';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -17,7 +18,9 @@ const CustomersManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({});
 
@@ -68,10 +71,20 @@ const CustomersManagement = () => {
     setShowModal(true);
   };
 
+  const handleView = (id) => {
+    const customer = customers.find(c => c.id === id);
+    if (customer) {
+      setSelectedCustomer(customer);
+      setShowDetailsModal(true);
+    }
+  };
+
   const handleEdit = (id) => {
     const customer = customers.find(c => c.id === id);
-    setEditingCustomer(customer);
-    setShowModal(true);
+    if (customer) {
+      setEditingCustomer(customer);
+      setShowModal(true);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -168,7 +181,7 @@ const CustomersManagement = () => {
 
       <CustomerList
         customers={filteredCustomers}
-        onView={handleEdit}
+        onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
@@ -184,6 +197,16 @@ const CustomersManagement = () => {
           onCancel={() => setShowModal(false)}
         />
       </Modal>
+
+      {/* Customer Details Modal */}
+      <CustomerDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedCustomer(null);
+        }}
+        customer={selectedCustomer}
+      />
     </div>
   );
 };

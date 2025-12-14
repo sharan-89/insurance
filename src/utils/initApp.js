@@ -1,6 +1,7 @@
 // Initialize app with dummy data on first load
 import { STORAGE_KEYS } from './storage';
 import { 
+  getInitialUsers,
   getInitialCustomers, 
   getInitialPolicies, 
   getInitialCustomerPolicies, 
@@ -10,6 +11,11 @@ import {
 
 export const initializeAppData = () => {
   // Only initialize if data doesn't exist
+  if (!localStorage.getItem(STORAGE_KEYS.USERS) || 
+      JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]').length === 0) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(getInitialUsers()));
+  }
+  
   if (!localStorage.getItem(STORAGE_KEYS.CUSTOMERS) || 
       JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOMERS) || '[]').length === 0) {
     localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(getInitialCustomers()));

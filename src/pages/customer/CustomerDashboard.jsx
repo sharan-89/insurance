@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getCustomerPolicies } from '../../services/policyService';
-import { getCustomerClaims } from '../../services/claimService';
+import { getCustomerDashboardStats } from '../../utils/customerDummyData';
 import { Card, CardContent } from '../../components/common/Card';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { FileText, CheckCircle2, ClipboardList, Clock } from 'lucide-react';
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPolicies: 0,
     activePolicies: 0,
@@ -18,42 +15,11 @@ const CustomerDashboard = () => {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const customerId = user?.customerId || user?.username;
-        
-        if (customerId) {
-          const [policies, claims] = await Promise.all([
-            getCustomerPolicies(customerId).catch(() => []),
-            getCustomerClaims(customerId).catch(() => [])
-          ]);
-
-          setStats({
-            totalPolicies: policies.length || 0,
-            activePolicies: policies.filter(p => p.status === 'Active').length || 0,
-            totalClaims: claims.length || 0,
-            pendingClaims: claims.filter(c => c.status === 'Submitted' || c.status === 'In Review').length || 0,
-            approvedClaims: claims.filter(c => c.status === 'Approved').length || 0
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    // Get dummy data directly - no API calls, no storage
+    const customerId = user?.customerId || 'cust_1';
+    const dashboardStats = getCustomerDashboardStats(customerId);
+    setStats(dashboardStats);
   }, [user]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <LoadingSpinner />
-      </div>
-    );
-  }
 
   const statCards = [
     {

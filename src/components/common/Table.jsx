@@ -32,7 +32,7 @@ const Table = ({ columns = [], data = [], className = '', onRowClick }) => {
               {data.map((row, index) => (
                 <tr
                   key={row.id || index}
-                  onClick={() => onRowClick?.(row)}
+                  onClick={() => onRowClick?.(row.id || row)}
                   className={`transition-colors hover:bg-purple-50/50 border-l-4 border-transparent hover:border-purple-300 ${
                     onRowClick ? 'cursor-pointer' : ''
                   }`}

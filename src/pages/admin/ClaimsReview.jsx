@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllClaims, updateClaimStatus } from '../../services/claimService';
 import ClaimList from '../../components/claim/ClaimList';
+import ClaimDetailsModal from '../../components/claim/ClaimDetailsModal';
 import Modal from '../../components/common/Modal';
 import Select from '../../components/common/Select';
 import Input from '../../components/common/Input';
@@ -18,7 +19,9 @@ const ClaimsReview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState(null);
+  const [viewingClaim, setViewingClaim] = useState(null);
   const [status, setStatus] = useState('');
   const [remarks, setRemarks] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,12 +83,22 @@ const ClaimsReview = () => {
     setFilters({});
   };
 
+  const handleView = (id) => {
+    const claim = claims.find(c => c.id === id);
+    if (claim) {
+      setViewingClaim(claim);
+      setShowDetailsModal(true);
+    }
+  };
+
   const handleUpdate = (id) => {
     const claim = claims.find(c => c.id === id);
-    setSelectedClaim(claim);
-    setStatus(claim.status);
-    setRemarks(claim.remarks || '');
-    setShowModal(true);
+    if (claim) {
+      setSelectedClaim(claim);
+      setStatus(claim.status);
+      setRemarks(claim.remarks || '');
+      setShowModal(true);
+    }
   };
 
   const handleSubmit = async () => {
@@ -168,9 +181,19 @@ const ClaimsReview = () => {
 
       <ClaimList
         claims={filteredClaims}
-        onView={handleUpdate}
+        onView={handleView}
         onUpdate={handleUpdate}
         showPolicy={true}
+      />
+
+      {/* Claim Details Modal */}
+      <ClaimDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setViewingClaim(null);
+        }}
+        claim={viewingClaim}
       />
 
       <Modal

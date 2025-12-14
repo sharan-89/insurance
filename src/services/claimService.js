@@ -1,20 +1,21 @@
 // Mock claim service using localStorage (no backend)
 import { getStorageData, setStorageData, generateId, addActivityLog, STORAGE_KEYS } from '../utils/storage';
 import { getCurrentUser } from './authService';
+import { toCamelCase, toSnakeCase } from '../utils/dataMapper';
 
 // Simulate API delay
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Generate claim number
+// Generate claim number (not stored in DB, but used for display)
 const generateClaimNumber = () => {
   const claims = getStorageData(STORAGE_KEYS.CLAIMS);
   const year = new Date().getFullYear();
   const existingNumbers = claims
-    .filter(c => c.claimNumber && c.claimNumber.startsWith(`CLM-${year}-`))
-    .map(c => {
-      const match = c.claimNumber.match(/CLM-\d{4}-(\d+)/);
-      return match ? parseInt(match[1], 10) : 0;
-    });
+    .filter(c => {
+      // Check if claim has a generated number in id or use index
+      return c.id && c.id.includes('claim');
+    })
+    .map((c, index) => index + 1);
   const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
   return `CLM-${year}-${String(nextNumber).padStart(3, '0')}`;
 };
@@ -22,14 +23,15 @@ const generateClaimNumber = () => {
 export const getAllClaims = async () => {
   await delay();
   const claims = getStorageData(STORAGE_KEYS.CLAIMS);
-  // Enrich with policy numbers and ensure claimNumber exists
   const policies = getStorageData(STORAGE_KEYS.POLICIES);
   return claims.map(claim => {
-    const policy = policies.find(p => p.id === claim.policyId);
+    const camelClaim = toCamelCase(claim);
+    const policy = policies.find(p => p.id === claim.policy_id);
     return {
-      ...claim,
-      claimNumber: claim.claimNumber || `CLM-${claim.id.replace('claim_', '')}`,
-      policyNumber: policy?.policyNumber || 'N/A'
+      ...camelClaim,
+      claimNumber: generateClaimNumber(), // Generate for display
+      policyNumber: policy?.policy_number || 'N/A',
+      createdAt: claim.created_at || new Date().toISOString()
     };
   });
 };
@@ -39,40 +41,76 @@ export const getClaimById = async (id) => {
   const claims = getStorageData(STORAGE_KEYS.CLAIMS);
   const claim = claims.find(c => c.id === id);
   if (!claim) return null;
+  const camelClaim = toCamelCase(claim);
   return {
-    ...claim,
-    claimNumber: claim.claimNumber || `CLM-${claim.id.replace('claim_', '')}`
+    ...camelClaim,
+    claimNumber: generateClaimNumber(),
+    createdAt: claim.created_at || new Date().toISOString()
   };
 };
 
 export const getCustomerClaims = async (customerId) => {
   await delay();
   const claims = getStorageData(STORAGE_KEYS.CLAIMS);
-  const customerClaims = claims.filter(c => 
-    c.customerId === customerId || String(c.customerId) === String(customerId)
-  );
-  
-  // Enrich with policy numbers and ensure claimNumber exists
+  const customers = getStorageData(STORAGE_KEYS.CUSTOMERS);
   const policies = getStorageData(STORAGE_KEYS.POLICIES);
-  return customerClaims.map(claim => {
-    const policy = policies.find(p => p.id === claim.policyId);
+  
+  if (!customerId) {
+    console.warn('getCustomerClaims: No customerId provided');
+    return [];
+  }
+  
+  // If customerId is a username, try to find the actual customer ID
+  let actualCustomerId = customerId;
+  if (customerId && !customerId.startsWith('cust_')) {
+    const customer = customers.find(c => {
+      const nameMatch = c.name.toLowerCase().includes(customerId.toLowerCase());
+      const emailMatch = c.email.toLowerCase().includes(customerId.toLowerCase());
+      return nameMatch || emailMatch;
+    });
+    if (customer) {
+      actualCustomerId = customer.id;
+    }
+  }
+  
+  const customerClaims = claims.filter(c => {
+    const cId = String(c.customer_id);
+    const searchId = String(actualCustomerId);
+    return cId === searchId;
+  });
+  
+  const mappedClaims = customerClaims.map(claim => {
+    const camelClaim = toCamelCase(claim);
+    const policy = policies.find(p => p.id === claim.policy_id);
     return {
-      ...claim,
-      claimNumber: claim.claimNumber || `CLM-${claim.id.replace('claim_', '')}`,
-      policyNumber: policy?.policyNumber || 'N/A'
+      ...camelClaim,
+      claimNumber: generateClaimNumber(),
+      policyNumber: policy?.policy_number || 'N/A',
+      createdAt: claim.created_at || new Date().toISOString()
     };
   });
+  
+  console.log('getCustomerClaims:', {
+    customerId,
+    actualCustomerId,
+    claimsCount: customerClaims.length,
+    mappedClaimsCount: mappedClaims.length
+  });
+  
+  return mappedClaims;
 };
 
 export const createClaim = async (claimData) => {
   await delay();
   const claims = getStorageData(STORAGE_KEYS.CLAIMS);
+  const snakeData = toSnakeCase({
+    ...claimData,
+    status: 'Submitted'
+  });
   const newClaim = {
     id: generateId(),
-    claimNumber: generateClaimNumber(),
-    ...claimData,
-    status: 'Submitted',
-    createdAt: new Date().toISOString()
+    ...snakeData,
+    created_at: new Date().toISOString()
   };
   claims.push(newClaim);
   setStorageData(STORAGE_KEYS.CLAIMS, claims);
@@ -82,7 +120,11 @@ export const createClaim = async (claimData) => {
     addActivityLog('Claim Submitted', 'Claim', newClaim.id, user.id);
   }
   
-  return newClaim;
+  return {
+    ...toCamelCase(newClaim),
+    claimNumber: generateClaimNumber(),
+    createdAt: newClaim.created_at
+  };
 };
 
 export const updateClaimStatus = async (id, status, remarks) => {
@@ -94,8 +136,7 @@ export const updateClaimStatus = async (id, status, remarks) => {
   claims[index] = {
     ...claims[index],
     status,
-    remarks: remarks || claims[index].remarks,
-    updatedAt: new Date().toISOString()
+    remarks: remarks || claims[index].remarks || ''
   };
   setStorageData(STORAGE_KEYS.CLAIMS, claims);
   
@@ -104,7 +145,11 @@ export const updateClaimStatus = async (id, status, remarks) => {
     addActivityLog(`Claim ${status}`, 'Claim', id, user.id);
   }
   
-  return claims[index];
+  return {
+    ...toCamelCase(claims[index]),
+    claimNumber: generateClaimNumber(),
+    createdAt: claims[index].created_at || new Date().toISOString()
+  };
 };
 
 export const filterClaims = async (filters) => {
@@ -115,20 +160,21 @@ export const filterClaims = async (filters) => {
     claims = claims.filter(c => c.status === filters.status);
   }
   if (filters.startDate) {
-    claims = claims.filter(c => new Date(c.claimDate) >= new Date(filters.startDate));
+    claims = claims.filter(c => new Date(c.claim_date) >= new Date(filters.startDate));
   }
   if (filters.endDate) {
-    claims = claims.filter(c => new Date(c.claimDate) <= new Date(filters.endDate));
+    claims = claims.filter(c => new Date(c.claim_date) <= new Date(filters.endDate));
   }
   
-  // Enrich with policy numbers and ensure claimNumber exists
   const policies = getStorageData(STORAGE_KEYS.POLICIES);
   return claims.map(claim => {
-    const policy = policies.find(p => p.id === claim.policyId);
+    const camelClaim = toCamelCase(claim);
+    const policy = policies.find(p => p.id === claim.policy_id);
     return {
-      ...claim,
-      claimNumber: claim.claimNumber || `CLM-${claim.id.replace('claim_', '')}`,
-      policyNumber: policy?.policyNumber || 'N/A'
+      ...camelClaim,
+      claimNumber: generateClaimNumber(),
+      policyNumber: policy?.policy_number || 'N/A',
+      createdAt: claim.created_at || new Date().toISOString()
     };
   });
 };

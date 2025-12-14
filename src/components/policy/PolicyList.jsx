@@ -9,11 +9,6 @@ const PolicyList = ({ policies = [], onView, onEdit, onAssign, showCustomer = fa
     { key: 'policyNumber', label: 'Policy Number' },
     { key: 'policyType', label: 'Type' },
     { 
-      key: 'coverageAmount', 
-      label: 'Coverage', 
-      render: (value) => formatCurrency(value) 
-    },
-    { 
       key: 'premiumAmount', 
       label: 'Premium', 
       render: (value) => formatCurrency(value) 

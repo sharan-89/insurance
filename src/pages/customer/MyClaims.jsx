@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getCustomerClaims } from '../../services/claimService';
+import { getCustomerClaimsData } from '../../utils/customerDummyData';
 import ClaimList from '../../components/claim/ClaimList';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ClaimDetailsModal from '../../components/claim/ClaimDetailsModal';
 import Alert from '../../components/common/Alert';
 import SearchInput from '../../components/common/SearchInput';
 import AdvancedFilter from '../../components/common/AdvancedFilter';
@@ -12,31 +12,18 @@ const MyClaims = () => {
   const { user } = useAuth();
   const [claims, setClaims] = useState([]);
   const [filteredClaims, setFilteredClaims] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({});
+  const [selectedClaim, setSelectedClaim] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
-    const fetchClaims = async () => {
-      try {
-        setLoading(true);
-        const customerId = user?.customerId || user?.username;
-        if (customerId) {
-          const data = await getCustomerClaims(customerId);
-          setClaims(data);
-          setFilteredClaims(data);
-        }
-      } catch (err) {
-        setError('Failed to load claims. Please try again.');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClaims();
+    // Get dummy data directly - no API calls, no storage
+    const customerId = user?.customerId || 'cust_1';
+    const data = getCustomerClaimsData(customerId);
+    setClaims(data || []);
+    setFilteredClaims(data || []);
   }, [user]);
 
   useEffect(() => {
@@ -70,7 +57,11 @@ const MyClaims = () => {
   };
 
   const handleView = (id) => {
-    console.log('View claim:', id);
+    const claim = claims.find(c => c.id === id);
+    if (claim) {
+      setSelectedClaim(claim);
+      setShowDetailsModal(true);
+    }
   };
 
   const handleFilterChange = (newFilters) => {
@@ -81,13 +72,6 @@ const MyClaims = () => {
     setFilters({});
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <LoadingSpinner />
-      </div>
-    );
-  }
 
   const statusOptions = Object.values(CLAIM_STATUS).map(s => ({
     value: s,
@@ -145,6 +129,16 @@ const MyClaims = () => {
       <ClaimList
         claims={filteredClaims}
         onView={handleView}
+      />
+
+      {/* Claim Details Modal */}
+      <ClaimDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedClaim(null);
+        }}
+        claim={selectedClaim}
       />
     </div>
   );

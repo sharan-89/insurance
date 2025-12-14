@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, LayoutDashboard, FileText, ClipboardList, Plus, Users, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutDashboard, FileText, ClipboardList, Plus, Users, Shield, History } from 'lucide-react';
 
 // Icon mapping for menu items
 const getIcon = (label) => {
@@ -11,7 +11,8 @@ const getIcon = (label) => {
     'Raise Claim': Plus,
     'Customers': Users,
     'Policies': FileText,
-    'Claims Review': Shield
+    'Claims Review': Shield,
+    'Activity Log': History
   };
   return iconMap[label] || LayoutDashboard;
 };

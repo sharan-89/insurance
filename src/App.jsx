@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import CustomersManagement from './pages/admin/CustomersManagement';
 import PoliciesManagement from './pages/admin/PoliciesManagement';
 import ClaimsReview from './pages/admin/ClaimsReview';
+import ActivityLog from './pages/admin/ActivityLog';
 
 // Components
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -67,7 +68,8 @@ const AdminLayout = ({ children }) => {
         { path: '/admin/dashboard', label: 'Dashboard' },
         { path: '/admin/customers', label: 'Customers' },
         { path: '/admin/policies', label: 'Policies' },
-        { path: '/admin/claims', label: 'Claims Review' }
+        { path: '/admin/claims', label: 'Claims Review' },
+        { path: '/admin/activity', label: 'Activity Log' }
       ]
     }
   ];
@@ -119,13 +121,14 @@ const AppRoutes = () => {
       } />
 
       <Route path="/admin/*" element={
-        <ProtectedRoute allowedRoles={['Admin', 'Agent']}>
+        <ProtectedRoute allowedRoles={['Admin']}>
           <AdminLayout>
             <Routes>
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="customers" element={<CustomersManagement />} />
               <Route path="policies" element={<PoliciesManagement />} />
               <Route path="claims" element={<ClaimsReview />} />
+              <Route path="activity" element={<ActivityLog />} />
               <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
             </Routes>
           </AdminLayout>

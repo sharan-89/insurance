@@ -4,6 +4,7 @@ import { getAllPolicies, createPolicy, updatePolicy, assignPolicyToCustomer } fr
 import { getAllCustomers } from '../../services/customerService';
 import PolicyList from '../../components/policy/PolicyList';
 import PolicyForm from '../../components/policy/PolicyForm';
+import PolicyDetailsModal from '../../components/policy/PolicyDetailsModal';
 import Modal from '../../components/common/Modal';
 import Select from '../../components/common/Select';
 import Button from '../../components/common/Button';
@@ -21,7 +22,9 @@ const PoliciesManagement = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState(null);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [assigningPolicyId, setAssigningPolicyId] = useState(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,10 +84,21 @@ const PoliciesManagement = () => {
     setShowModal(true);
   };
 
-  const handleEdit = (id) => {
+  const handleView = (id) => {
     const policy = policies.find(p => p.id === id);
-    setEditingPolicy(policy);
-    setShowModal(true);
+    if (policy) {
+      setSelectedPolicy(policy);
+      setShowDetailsModal(true);
+    }
+  };
+
+  const handleEdit = (id) => {
+    // Only edit when explicitly clicking edit button, not view
+    const policy = policies.find(p => p.id === id);
+    if (policy) {
+      setEditingPolicy(policy);
+      setShowModal(true);
+    }
   };
 
   const handleAssign = (id) => {
@@ -208,7 +222,7 @@ const PoliciesManagement = () => {
 
       <PolicyList
         policies={filteredPolicies}
-        onView={handleEdit}
+        onView={handleView}
         onEdit={handleEdit}
         onAssign={handleAssign}
       />
@@ -258,6 +272,16 @@ const PoliciesManagement = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Policy Details Modal */}
+      <PolicyDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedPolicy(null);
+        }}
+        policy={selectedPolicy}
+      />
     </div>
   );
 };

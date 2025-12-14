@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getCustomerPolicies } from '../../services/policyService';
+import { getCustomerPoliciesData } from '../../utils/customerDummyData';
 import PolicyList from '../../components/policy/PolicyList';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import PolicyDetailsModal from '../../components/policy/PolicyDetailsModal';
 import Alert from '../../components/common/Alert';
 import SearchInput from '../../components/common/SearchInput';
 import AdvancedFilter from '../../components/common/AdvancedFilter';
@@ -11,30 +11,18 @@ const MyPolicies = () => {
   const { user } = useAuth();
   const [policies, setPolicies] = useState([]);
   const [filteredPolicies, setFilteredPolicies] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({});
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
-    const fetchPolicies = async () => {
-      try {
-        setLoading(true);
-        const customerId = user?.customerId || user?.username;
-        if (customerId) {
-          const data = await getCustomerPolicies(customerId);
-          setPolicies(data);
-          setFilteredPolicies(data);
-        }
-      } catch (err) {
-        setError('Failed to load policies. Please try again.');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPolicies();
+    // Get dummy data directly - no API calls, no storage
+    const customerId = user?.customerId || 'cust_1';
+    const data = getCustomerPoliciesData(customerId);
+    setPolicies(data || []);
+    setFilteredPolicies(data || []);
   }, [user]);
 
   useEffect(() => {
@@ -65,7 +53,11 @@ const MyPolicies = () => {
   };
 
   const handleView = (id) => {
-    console.log('View policy:', id);
+    const policy = policies.find(p => p.id === id);
+    if (policy) {
+      setSelectedPolicy(policy);
+      setShowDetailsModal(true);
+    }
   };
 
   const handleFilterChange = (newFilters) => {
@@ -76,13 +68,6 @@ const MyPolicies = () => {
     setFilters({});
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <LoadingSpinner />
-      </div>
-    );
-  }
 
   const policyTypes = [...new Set(policies.map(p => p.policyType))].map(type => ({
     value: type,
@@ -141,6 +126,16 @@ const MyPolicies = () => {
       <PolicyList
         policies={filteredPolicies}
         onView={handleView}
+      />
+
+      {/* Policy Details Modal */}
+      <PolicyDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedPolicy(null);
+        }}
+        policy={selectedPolicy}
       />
     </div>
   );

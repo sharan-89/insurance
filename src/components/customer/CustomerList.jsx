@@ -9,7 +9,6 @@ const CustomerList = ({ customers = [], onView, onEdit, onDelete }) => {
     { key: 'name', label: 'Name' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Phone', render: (value) => formatPhone(value) },
-    { key: 'address', label: 'Address' },
     {
       key: 'actions',
       label: 'Actions',
@@ -56,7 +55,7 @@ const CustomerList = ({ customers = [], onView, onEdit, onDelete }) => {
     }
   ];
 
-  return <Table columns={columns} data={customers} onRowClick={onEdit} />;
+  return <Table columns={columns} data={customers} onRowClick={onView} />;
 };
 
 export default CustomerList;
