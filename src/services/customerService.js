@@ -21,15 +21,49 @@ export const getCustomerById = async (id) => {
 
 export const createCustomer = async (customerData) => {
   await delay();
+  
+  // Step 1: Create user account first (if username and password provided)
+  let userId = null;
+  if (customerData.username && customerData.password) {
+    const users = getStorageData(STORAGE_KEYS.USERS);
+    
+    // Check if username already exists
+    const existingUser = users.find(u => 
+      u.username.toLowerCase() === customerData.username.toLowerCase()
+    );
+    
+    if (existingUser) {
+      throw new Error('Username already exists. Please choose a different username.');
+    }
+    
+    // Create new user
+    userId = generateId();
+    const newUser = {
+      id: userId,
+      username: customerData.username,
+      password_hash: `$2b$10$hashed_${customerData.password}`, // In real app, hash the password
+      role: 'Customer'
+    };
+    
+    users.push(newUser);
+    setStorageData(STORAGE_KEYS.USERS, users);
+  }
+  
+  // Step 2: Create customer record with linked_user_id
   const customers = getStorageData(STORAGE_KEYS.CUSTOMERS);
-  const snakeData = toSnakeCase(customerData);
+  const { username, password, ...customerFields } = customerData; // Remove username/password from customer data
+  const snakeData = toSnakeCase(customerFields);
+  
   const newCustomer = {
     id: generateId(),
-    ...snakeData
+    ...snakeData,
+    ...(userId && { linked_user_id: userId }) // Link to the created user
   };
+  
   customers.push(newCustomer);
   setStorageData(STORAGE_KEYS.CUSTOMERS, customers);
   
+  // Step 3: Log activity
   const user = getCurrentUser();
   if (user) {
     addActivityLog('Customer Created', 'Customer', newCustomer.id, user.id);

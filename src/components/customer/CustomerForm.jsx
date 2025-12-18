@@ -8,9 +8,12 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
     name: '',
     email: '',
     phone: '',
-    address: ''
+    address: '',
+    username: '',
+    password: ''
   });
   const [errors, setErrors] = useState({});
+  const isEditing = !!customer;
 
   useEffect(() => {
     if (customer) {
@@ -18,7 +21,9 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
         name: customer.name || '',
         email: customer.email || '',
         phone: customer.phone || '',
-        address: customer.address || ''
+        address: customer.address || '',
+        username: '', // Don't show username/password when editing
+        password: ''
       });
     }
   }, [customer]);
@@ -34,11 +39,19 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const validationErrors = validateForm(formData, {
+    const validationRules = {
       name: { required: true, minLength: 2 },
       email: { required: true, email: true },
       phone: { required: true, phone: true }
-    });
+    };
+
+    // Only require username/password when creating new customer
+    if (!isEditing) {
+      validationRules.username = { required: true, minLength: 3 };
+      validationRules.password = { required: true, minLength: 6 };
+    }
+
+    const validationErrors = validateForm(formData, validationRules);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -86,6 +99,33 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
         onChange={handleChange}
         error={errors.address}
       />
+
+      {!isEditing && (
+        <>
+          <div className="pt-2 border-t">
+            <p className="text-sm font-medium text-gray-700 mb-3">Login Credentials</p>
+          </div>
+          <Input
+            label="Username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            error={errors.username}
+            required
+            placeholder="Choose a username for login"
+          />
+          <Input
+            label="Password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+            required
+            placeholder="Minimum 6 characters"
+          />
+        </>
+      )}
 
       <div className="flex items-center justify-end gap-2 pt-4 border-t">
         <Button 

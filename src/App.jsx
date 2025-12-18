@@ -5,6 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Pages
+import Home from './pages/Home';
 import Login from './pages/Login';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import MyPolicies from './pages/customer/MyPolicies';
@@ -139,7 +140,7 @@ const AppRoutes = () => {
         isAuthenticated() ? (
           <Navigate to={user?.role === 'Customer' ? '/customer/dashboard' : '/admin/dashboard'} replace />
         ) : (
-          <Navigate to="/login" replace />
+          <Home />
         )
       } />
     </Routes>
